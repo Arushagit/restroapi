@@ -31,12 +31,11 @@ class Command(BaseCommand):
         for udata in users_data:
             pwd = udata.pop('password')
             u, created = User.objects.get_or_create(username=udata['username'], defaults=udata)
-            if created:
-                u.set_password(pwd)
-                u.save()
-                if u.role == 'customer':
-                    CustomerProfile.objects.get_or_create(user=u, address='Flat 402, Sunshine Apartments, MG Road')
-                self.stdout.write(f"Created user: {u.username} ({u.role})")
+            u.set_password(pwd)
+            u.save()
+            if u.role == 'customer':
+                CustomerProfile.objects.get_or_create(user=u, defaults={'address': 'Flat 402, Sunshine Apartments, MG Road'})
+            self.stdout.write(f"Configured user: {u.username} ({u.role})")
             users[u.username] = u
 
         # 2. Create Restaurant Tables
