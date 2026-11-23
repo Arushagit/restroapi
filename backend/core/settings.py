@@ -1,14 +1,26 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'restroflow-secret-key-change-in-production')
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1')
 
-ALLOWED_HOSTS = ["restroapi-vvei.onrender.com","127.0.0.1","localhost"]
+ALLOWED_HOSTS = [
+    "restroapi-vvei.onrender.com",
+    "restroapp-y2gi.onrender.com",
+    "127.0.0.1",
+    "localhost",
+    ".onrender.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://restroapi-vvei.onrender.com",
+    "https://restroapp-y2gi.onrender.com",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,13 +46,13 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -63,39 +75,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database - PostgreSQL with SQLite fallback
-_pg_host = os.environ.get('DB_HOST', 'localhost')
-_pg_port = os.environ.get('DB_PORT', '5432')
-_pg_name = os.environ.get('DB_NAME', 'restroflow')
-_pg_user = os.environ.get('DB_USER', 'postgres')
-_pg_password = os.environ.get('DB_PASSWORD', 'postgres')
-
-try:
-    import psycopg2
-    _conn = psycopg2.connect(
-        host=_pg_host, port=int(_pg_port), dbname=_pg_name,
-        user=_pg_user, password=_pg_password, connect_timeout=3
-    )
-    _conn.close()
+# Database
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    DATABASES = {
+        'default': dj_database_url.parse(database_url, conn_max_age=600)
+    }
+    print("[RESTROFLOW] Using DATABASE_URL connection")
+elif os.environ.get('DB_HOST'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _pg_name,
-            'USER': _pg_user,
-            'PASSWORD': _pg_password,
-            'HOST': _pg_host,
-            'PORT': _pg_port,
+            'NAME': os.environ.get('DB_NAME', 'restroflow'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
         }
     }
-    print("[RESTROFLOW] Using PostgreSQL database")
-except Exception as e:
-    print(f"[RESTROFLOW] WARNING: PostgreSQL connection failed ({e}). Falling back to SQLite.")
+    print("[RESTROFLOW] Using DB_HOST PostgreSQL configuration")
+else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("[RESTROFLOW] Using SQLite database")
 
 AUTH_USER_MODEL = 'authentication.User'
 
@@ -114,22 +120,31 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise for serving static files in production
-if not DEBUG:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS — tighten in production via env var
+# CORS
 _cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if _cors_origins:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(',')]
 else:
-    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = [
+        "https://restroapp-y2gi.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+    ]
 CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework
