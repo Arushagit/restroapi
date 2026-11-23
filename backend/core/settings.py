@@ -8,7 +8,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'restroflow-secret-key-change-in-produ
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ["restroapi-vvei.onrender.com","127.0.0.1","localhost","192.168."]
+ALLOWED_HOSTS = ["restroapi-vvei.onrender.com","127.0.0.1","localhost"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',

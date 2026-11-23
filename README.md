@@ -25,8 +25,8 @@ RESTROFLOW is a demonstrable, full-stack restaurant management platform built wi
 cd d:\restro\backend
 python manage.py runserver 0.0.0.0:8000
 ```
-- API Base URL: `http://localhost:8000/api/`
-- Admin Panel: `http://localhost:8000/admin/`
+- API Base URL: `https://restroapi-vvei.onrender.com/api/`
+- Admin Panel: `https://restroapi-vvei.onrender.com/admin/`
 
 ### 2. Frontend (React + Vite)
 ```bash

@@ -2,7 +2,7 @@ import urllib.request
 import json
 import sys
 
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = "https://restroapi-vvei.onrender.com/api"
 
 def request(url, method="GET", data=None, token=None):
     headers = {"Content-Type": "application/json"}

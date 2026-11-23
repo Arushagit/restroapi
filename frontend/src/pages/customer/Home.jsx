@@ -9,10 +9,15 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [slowLoad, setSlowLoad] = useState(false);
   const { addToCart } = useCart();
   const toast = useToast();
 
   useEffect(() => {
+    // After 4s still loading → show "waking up server" hint (Render cold start)
+    const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
+
     async function loadData() {
       try {
         const [catRes, featRes] = await Promise.all([
@@ -23,17 +28,62 @@ export default function Home() {
         setFeatured(featRes.data || []);
       } catch (err) {
         console.error('Error loading home data:', err);
+        setError(true);
       } finally {
+        clearTimeout(slowTimer);
+        setSlowLoad(false);
         setLoading(false);
       }
     }
     loadData();
+    return () => clearTimeout(slowTimer);
   }, []);
 
   const handleQuickAdd = (item) => {
     addToCart(item, 1);
     toast.success(`Added ${item.name} to cart!`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center animate-pulse">
+          <UtensilsCrossed size={28} className="text-primary" />
+        </div>
+        <div>
+          <p className="text-base font-semibold text-charcoal">Loading RestroFlow…</p>
+          {slowLoad && (
+            <p className="text-sm text-gray-400 mt-1 max-w-xs">
+              ☕ Waking up the server — this takes ~30s on first load. Hang tight!
+            </p>
+          )}
+        </div>
+        <div className="w-48 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-full bg-primary rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style={{width:'60%'}} />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+          <UtensilsCrossed size={28} className="text-red-400" />
+        </div>
+        <div>
+          <p className="text-base font-semibold text-charcoal">Could not reach the server</p>
+          <p className="text-sm text-gray-400 mt-1">The backend may be starting up. Please refresh in 30 seconds.</p>
+        </div>
+        <button
+          onClick={() => { setError(false); setLoading(true); window.location.reload(); }}
+          className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-16 pb-16">
@@ -139,24 +189,32 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/menu?category=${cat.id}`}
-              className="group bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-center space-y-3"
-            >
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-orange-50 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-300">
-                <UtensilsCrossed size={28} />
-              </div>
-              <h3 className="font-bold text-charcoal group-hover:text-primary transition-colors">{cat.name}</h3>
-              <p className="text-xs text-gray-500 line-clamp-2">{cat.description || `${cat.items_count || 0} delicious dishes`}</p>
-              <span className="inline-block text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
-                {cat.items_count || 0} Items
-              </span>
-            </Link>
-          ))}
-        </div>
+        {categories.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <UtensilsCrossed size={40} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No categories yet — check back soon!</p>
+            <Link to="/menu" className="mt-3 inline-block text-sm font-bold text-primary hover:underline">Browse Menu →</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/menu?category=${cat.id}`}
+                className="group bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-center space-y-3"
+              >
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-orange-50 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-300">
+                  <UtensilsCrossed size={28} />
+                </div>
+                <h3 className="font-bold text-charcoal group-hover:text-primary transition-colors">{cat.name}</h3>
+                <p className="text-xs text-gray-500 line-clamp-2">{cat.description || `${cat.items_count || 0} delicious dishes`}</p>
+                <span className="inline-block text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                  {cat.items_count || 0} Items
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Items Grid */}

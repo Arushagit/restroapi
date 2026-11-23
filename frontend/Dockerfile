@@ -6,7 +6,7 @@ RUN npm ci
 
 COPY . .
 # VITE_API_URL is passed as build-arg so it's baked into the bundle
-ARG VITE_API_URL=http://localhost:8000/api
+ARG VITE_API_URL=https://restroapi-vvei.onrender.com/api
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
