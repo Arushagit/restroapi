@@ -12,3 +12,8 @@ class RestaurantTableViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
+
+    def get_authenticators(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return []
+        return super().get_authenticators()

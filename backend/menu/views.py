@@ -13,6 +13,11 @@ class FoodCategoryViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description']
     pagination_class = None  # Return all categories for UI dropdowns and tabs
 
+    def get_authenticators(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return []
+        return super().get_authenticators()
+
 
 class FoodItemViewSet(viewsets.ModelViewSet):
     queryset = FoodItem.objects.select_related('category').all().order_by('-created_at')
@@ -23,3 +28,8 @@ class FoodItemViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description', 'category__name']
     ordering_fields = ['price', 'name', 'created_at']
     pagination_class = None  # Or disabled for smooth responsive filtering on frontend
+
+    def get_authenticators(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return []
+        return super().get_authenticators()
